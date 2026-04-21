@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRA Security Diffs — Before &amp; After</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --red-bg: #3d1117;
+    --red-text: #ff7b72;
+    --red-border: #67181e;
+    --green-bg: #0d2818;
+    --green-text: #7ee787;
+    --green-border: #1b4721;
+    --accent: #58a6ff;
+    --yellow: #d29922;
+    --orange: #f0883e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+  }
+
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero h1 .accent { color: var(--green-text); }
+  .hero h1 .remove { color: var(--red-text); }
+
+  .hero .subtitle {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin: 0 auto 2rem;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .timeline-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 0;
+  }
+
+  .timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding: 1rem 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  .timeline-item {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    background: var(--surface);
+    padding: 0 0.8rem;
+  }
+
+  .timeline-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    margin: 0 auto 0.4rem;
+    border: 2px solid var(--surface);
+  }
+
+  .timeline-item.active .timeline-dot {
+    background: var(--orange);
+    box-shadow: 0 0 8px rgba(240, 136, 62, 0.5);
+  }
+
+  .timeline-item.danger .timeline-dot {
+    background: var(--red-text);
+    box-shadow: 0 0 8px rgba(255, 123, 114, 0.5);
+  }
+
+  .timeline-date {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .timeline-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    max-width: 120px;
+    margin: 0 auto;
+  }
+
+  .counter-section {
+    padding: 3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .counter-section h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .counter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .counter-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+  }
+
+  .counter-card .objection {
+    color: var(--red-text);
+    font-style: italic;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .counter-card .answer {
+    color: var(--green-text);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .diff-section {
+    padding: 3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .diff-header { margin-bottom: 1.5rem; }
+
+  .diff-number {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .diff-header h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .cra-ref {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    padding: 0.6rem 1rem;
+    margin-bottom: 1.2rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  .cra-ref strong { color: var(--accent); }
+
+  .sub-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+    margin-top: 1rem;
+  }
+
+  .diff-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  .diff-block .filename {
+    background: var(--border);
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .diff-block pre {
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  .diff-block .line { display: block; padding: 0 0.5rem; }
+  .diff-block .line.removed { background: var(--red-bg); color: var(--red-text); }
+  .diff-block .line.added { background: var(--green-bg); color: var(--green-text); }
+  .diff-block .line.context { color: var(--text-muted); }
+
+  .risk-fix {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.2rem;
+  }
+
+  .risk-box, .fix-box {
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  .risk-box {
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+  }
+
+  .risk-box .label {
+    color: var(--red-text);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  .risk-box p { color: #ffa198; }
+
+  .fix-box {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+  }
+
+  .fix-box .label {
+    color: var(--green-text);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  .fix-box p { color: #aff5b4; }
+
+  .overview-section {
+    padding: 3rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .overview-section h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .overview-table th {
+    text-align: left;
+    padding: 0.8rem 1rem;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .overview-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .overview-table tr:hover td { background: var(--surface); }
+
+  .tag {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin: 0.1rem;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .footer .message {
+    font-size: 1.1rem;
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .hero h1 { font-size: 1.8rem; }
+    .counter-grid { grid-template-columns: 1fr; }
+    .risk-fix { grid-template-columns: 1fr; }
+    .timeline { flex-wrap: wrap; gap: 1rem; justify-content: center; }
+    .timeline::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <h1><span class="remove">- Insecure code</span><br><span class="accent">+ CRA compliant</span></h1>
+  <p class="subtitle">The goal of this campaign is to show that introducing compliance is not a complete rewrite, but a change of habit.
+    Each diff below shows the exact lines that separate a vulnerable .NET app from a compliant one.</p>
+</section>
+
+<!-- TIMELINE -->
+<section class="timeline-bar">
+  <div class="container">
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">2024-25</div>
+        <div class="timeline-label">NIS2</div>
+      </div>
+      <div class="timeline-item active">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">Sep 2026</div>
+        <div class="timeline-label">CRA incident reporting starts</div>
+      </div>
+      <div class="timeline-item danger">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">2027</div>
+        <div class="timeline-label">CRA fully enforced &amp; all requirements apply</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COUNTER ARGUMENTS -->
+<section class="counter-section">
+  <div class="container">
+    <h2>What your team says vs. what CRA means</h2>
+    <div class="counter-grid">
+      <div class="counter-card">
+        <div class="objection">"We don't have time for security"</div>
+        <div class="answer">A vulnerability costs 30x more to fix in production than in design. These diffs are 2-5 lines each.</div>
+      </div>
+      <div class="counter-card">
+        <div class="objection">"Customers pay for features, not security"</div>
+        <div class="answer">From 2027 your product cannot be sold in the EU without CRA compliance. No compliance = no market.</div>
+      </div>
+      <div class="counter-card">
+        <div class="objection">"SBOMs are just bureaucracy"</div>
+        <div class="answer">One command: <code>dotnet CycloneDX App.sln</code></div>
+      </div>
+      <div class="counter-card">
+        <div class="objection">"We can pentest at the end"</div>
+        <div class="answer">Design flaws can't be fixed in 2 days. Shift left or pay 30x later.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFF 1 -->
+<section class="diff-section">
+  <div class="container">
+    <div class="diff-header">
+      <span class="diff-number">Diff 1</span>
+      <h2>Access Control &mdash; Deny by Default</h2>
+    </div>
+    <div class="cra-ref"><strong>CRA &sect;2d</strong> Ensure protection against unauthorized access by appropriate control mechanisms</div>
+
+    <div class="diff-block">
+      <div class="filename">Program.cs &mdash; Authorization configuration</div>
+      <pre><span class="line context">builder.Services.AddAuthorization(options =&gt;</span>
+<span class="line context">{</span>
+<span class="line removed">-   // No fallback means new endpoints are open by default</span>
+<span class="line removed">-   // Forgot [Authorize]? Open to everyone.</span>
+<span class="line added">+   // Deny by default: everything requires auth</span>
+<span class="line added">+   options.FallbackPolicy = new AuthorizationPolicyBuilder()</span>
+<span class="line added">+       .RequireAuthenticatedUser()</span>
+<span class="line added">+       .Build();</span>
+<span class="line context">});</span></pre>
+    </div>
+
+    <div class="diff-block">
+      <div class="filename">OrdersController.cs &mdash; IDOR vulnerability</div>
+      <pre><span class="line added">+// Attack: GET /api/orders/42 returns my order</span>
+<span class="line added">+//         GET /api/orders/43 returns someone else's (IDOR)</span>
+<span class="line context">[HttpGet("{id}")]</span>
+<span class="line context">public IActionResult GetOrder(int id)</span>
+<span class="line context">{</span>
+<span class="line context">    var order = db.Orders.Find(id);</span>
+<span class="line removed">-   return Ok(order);</span>
+<span class="line added">+   if (order == null) return NotFound();</span>
+<span class="line added">+   if (order.UserId != User.FindFirstValue(ClaimTypes.NameIdentifier))</span>
+<span class="line added">+       return Forbid();</span>
+<span class="line added">+   return Ok(order);</span>
+<span class="line context">}</span></pre>
+    </div>
+
+    <div class="risk-fix">
+      <div class="risk-box">
+        <div class="label">Risk</div>
+        <p>Without a fallback policy, every new endpoint is open by default. Forget <code>[Authorize]</code> once and you expose customer data. IDOR lets user A see user B's orders by changing the ID in the URL.</p>
+      </div>
+      <div class="fix-box">
+        <div class="label">Fix</div>
+        <p>3 lines of middleware + 2 lines per endpoint.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFF 2 -->
+<section class="diff-section">
+  <div class="container">
+    <div class="diff-header">
+      <span class="diff-number">Diff 2</span>
+      <h2>Secure Defaults &mdash; Fail Securely</h2>
+    </div>
+    <div class="cra-ref"><strong>CRA &sect;2b</strong> Made available with a secure configuration by default<br><strong>CRA &sect;2k</strong> Minimize impact of an incident through appropriate mechanisms</div>
+
+    <div class="diff-block">
+      <div class="filename">AdminController.cs &mdash; Dashboard access</div>
+      <pre><span class="line context">[HttpGet("admin/dashboard")]</span>
+<span class="line context">public IActionResult GetDashboard()</span>
+<span class="line context">{</span>
+<span class="line added">+   var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);</span>
+<span class="line removed">-   bool isAdmin = true;</span>
+<span class="line added">+   bool isAdmin = false;</span>
+<span class="line context">    try</span>
+<span class="line context">    {</span>
+<span class="line context">        isAdmin = _authService.IsUserInRole(userId, "Administrator");</span>
+<span class="line context">    }</span>
+<span class="line context">    catch (Exception ex)</span>
+<span class="line context">    {</span>
+<span class="line removed">-       return Content(ex.ToString()); // leaks stacktrace</span>
+<span class="line added">+       _logger.LogWarning(ex, "Admin check failed for {User}", userId);</span>
+<span class="line added">+       // isAdmin stays false = fail secure</span>
+<span class="line context">    }</span>
+<span class="line context"></span>
+<span class="line removed">-   if (isAdmin) return View("Dashboard");</span>
+<span class="line removed">-   return Unauthorized();</span>
+<span class="line added">+   if (!isAdmin) return Forbid();</span>
+<span class="line added">+   return View("Dashboard");</span>
+<span class="line context">}</span></pre>
+    </div>
+
+    <div class="risk-fix">
+      <div class="risk-box">
+        <div class="label">Risk</div>
+        <p><code>isAdmin = true</code> as default means any exception grants admin access. <code>ex.ToString()</code> leaks the stacktrace directly to the attacker.</p>
+      </div>
+      <div class="fix-box">
+        <div class="label">Fix</div>
+        <p>Flip the default to <code>false</code>, log the error server-side. The system now fails closed instead of open.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFF 3 -->
+<section class="diff-section">
+  <div class="container">
+    <div class="diff-header">
+      <span class="diff-number">Diff 3</span>
+      <h2>Supply Chain &mdash; SBOM &amp; Dependency Scanning</h2>
+    </div>
+    <div class="cra-ref"><strong>CRA &sect;2a</strong> Made available without known exploitable vulnerabilities<br><strong>CRA &sect;2c</strong> Ensure vulnerabilities can be addressed through security updates</div>
+
+    <div class="diff-block">
+      <div class="filename">build.yml &mdash; CI/CD pipeline</div>
+      <pre><span class="line context">steps:</span>
+<span class="line context">  - name: Build</span>
+<span class="line context">    run: dotnet build</span>
+<span class="line context"></span>
+<span class="line added">+  - name: Dependency vulnerability scan</span>
+<span class="line added">+    run: |</span>
+<span class="line added">+      dotnet list package --vulnerable --include-transitive 2&gt;&amp;1 | tee vuln.txt</span>
+<span class="line added">+      if grep -q "has the following vulnerable packages" vuln.txt; then exit 1; fi</span>
+<span class="line added">+</span>
+<span class="line added">+  - name: Generate SBOM</span>
+<span class="line added">+    run: dotnet CycloneDX App.sln -j -o .</span>
+<span class="line added">+</span>
+<span class="line added">+  - name: Upload SBOM to Dependency-Track</span>
+<span class="line added">+    run: |</span>
+<span class="line added">+      curl -X POST "${{ secrets.DT_URL }}/api/v1/bom" \</span>
+<span class="line added">+        -H "X-Api-Key: ${{ secrets.DT_API_KEY }}" \</span>
+<span class="line added">+        -F "projectName=App" -F "autoCreate=true" -F "bom=@bom.json"</span>
+<span class="line context"></span>
+<span class="line context">  - name: Deploy</span>
+<span class="line context">    run: dotnet publish</span></pre>
+    </div>
+
+    <div class="risk-fix">
+      <div class="risk-box">
+        <div class="label">Risk</div>
+        <p>Most of a modern codebase is dependencies. Without scanning, we ship other people's vulnerabilities.</p>
+      </div>
+      <div class="fix-box">
+        <div class="label">Fix</div>
+        <p>3 pipeline steps: scan, generate SBOM, upload. The build now fails on known vulnerabilities.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFF 4 -->
+<section class="diff-section">
+  <div class="container">
+    <div class="diff-header">
+      <span class="diff-number">Diff 4</span>
+      <h2>Confidentiality &amp; Data Integrity</h2>
+    </div>
+    <div class="cra-ref"><strong>CRA &sect;2e</strong> Protect confidentiality by encrypting relevant data at rest or in transit<br><strong>CRA &sect;2f</strong> Protect integrity of data against unauthorized modification</div>
+
+    <p class="sub-label">&sect;2e Encrypt data in transit:</p>
+    <div class="diff-block">
+      <div class="filename">Program.cs &mdash; HTTPS enforcement</div>
+      <pre><span class="line context">var app = builder.Build();</span>
+<span class="line context"></span>
+<span class="line removed">-// HTTP allows traffic to be intercepted on the network</span>
+<span class="line removed">-app.MapControllers();</span>
+<span class="line added">+app.UseHttpsRedirection();</span>
+<span class="line added">+app.UseHsts();</span>
+<span class="line added">+app.MapControllers();</span></pre>
+    </div>
+
+    <p class="sub-label">&sect;2e Protect stored credentials:</p>
+    <div class="diff-block">
+      <div class="filename">UserService.cs &mdash; Password storage</div>
+      <pre><span class="line removed">-db.Store(new User { Password = request.Password });</span>
+<span class="line added">+var hash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);</span>
+<span class="line added">+db.Store(new User { PasswordHash = hash });</span></pre>
+    </div>
+
+    <p class="sub-label">&sect;2f Protect integrity (SQL injection):</p>
+    <div class="diff-block">
+      <div class="filename">OrderRepository.cs &mdash; Database query</div>
+      <pre><span class="line removed">-var query = "SELECT * FROM users WHERE id=" + userId;</span>
+<span class="line removed">-var result = db.ExecuteRaw(query);</span>
+<span class="line added">+var result = db.Users</span>
+<span class="line added">+    .Where(u =&gt; u.Id == userId)</span>
+<span class="line added">+    .FirstOrDefault();</span>
+<span class="line added">+// EF Core parameterizes automatically, preventing SQL injection</span></pre>
+    </div>
+
+    <p class="sub-label">&sect;2e Remove secrets from source code:</p>
+    <div class="diff-block">
+      <div class="filename">appsettings.json + Program.cs &mdash; Connection string</div>
+      <pre><span class="line removed">-"ConnectionString": "Server=db;Database=app;User=sa;Password=hunter2"</span>
+<span class="line added">+"ConnectionStrings": {</span>
+<span class="line added">+  "Default": "" // injected via Key Vault or environment at runtime</span>
+<span class="line added">+}</span></pre>
+    </div>
+
+    <div class="risk-fix">
+      <div class="risk-box">
+        <div class="label">Risk</div>
+        <p>Plaintext passwords: one breach exposes every user. String concatenation in SQL: attacker reads the entire database. Hardcoded credentials in git: permanently exposed. HTTP without TLS: all traffic visible on the wire.</p>
+      </div>
+      <div class="fix-box">
+        <div class="label">Fix</div>
+        <p>One line HTTPS, one line bcrypt, one line LINQ, secrets out of code. None takes more than 5 minutes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFF 5 -->
+<section class="diff-section">
+  <div class="container">
+    <div class="diff-header">
+      <span class="diff-number">Diff 5</span>
+      <h2>Attack Surface Reduction</h2>
+    </div>
+    <div class="cra-ref"><strong>CRA &sect;2j</strong> Designed to limit attack surfaces, including external interfaces<br><strong>CRA &sect;2h</strong> Protect availability of essential functions, even after an incident</div>
+
+    <div class="diff-block">
+      <div class="filename">Program.cs &mdash; Rate limiting, debug endpoints, security headers</div>
+      <pre><span class="line added">+// Rate limiting against DoS</span>
+<span class="line added">+builder.Services.AddRateLimiter(options =&gt;</span>
+<span class="line added">+{</span>
+<span class="line added">+    options.AddFixedWindowLimiter("default", opt =&gt;</span>
+<span class="line added">+    {</span>
+<span class="line added">+        opt.PermitLimit = 100;</span>
+<span class="line added">+        opt.Window = TimeSpan.FromMinutes(1);</span>
+<span class="line added">+    });</span>
+<span class="line added">+});</span>
+<span class="line context"></span>
+<span class="line context">var app = builder.Build();</span>
+<span class="line added">+app.UseRateLimiter();</span>
+<span class="line context"></span>
+<span class="line removed">-// Debug endpoints active in production</span>
+<span class="line removed">-app.MapGet("/debug/config", () =&gt; Results.Json(config));</span>
+<span class="line removed">-app.MapGet("/debug/env", () =&gt; Results.Json(Environment.GetEnvironmentVariables()));</span>
+<span class="line context"></span>
+<span class="line added">+if (app.Environment.IsDevelopment())</span>
+<span class="line added">+{</span>
+<span class="line added">+    app.MapGet("/debug/config", () =&gt; Results.Json(config));</span>
+<span class="line added">+}</span>
+<span class="line context"></span>
+<span class="line added">+// Security headers (CRA &sect;2j)</span>
+<span class="line added">+app.Use(async (context, next) =&gt;</span>
+<span class="line added">+{</span>
+<span class="line added">+    var h = context.Response.Headers;</span>
+<span class="line added">+    h["X-Content-Type-Options"] = "nosniff";</span>
+<span class="line added">+    h["X-Frame-Options"] = "DENY";</span>
+<span class="line added">+    h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";</span>
+<span class="line added">+    await next();</span>
+<span class="line added">+});</span></pre>
+    </div>
+
+    <div class="risk-fix">
+      <div class="risk-box">
+        <div class="label">Risk</div>
+        <p>Debug endpoints in production leak config and environment variables. No rate limiting means free brute-force and DDoS. Missing security headers allow clickjacking and MIME sniffing.</p>
+      </div>
+      <div class="fix-box">
+        <div class="label">Fix</div>
+        <p>Debug behind environment check, rate limiter added, security headers set.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFF 6 -->
+<section class="diff-section">
+  <div class="container">
+    <div class="diff-header">
+      <span class="diff-number">Diff 6</span>
+      <h2>Security Logging &amp; Incident Readiness</h2>
+    </div>
+    <div class="cra-ref"><strong>CRA &sect;2l</strong> Provide security information by recording and monitoring relevant activities<br><strong>NIS2</strong> 24-hour early warning for incidents</div>
+
+    <div class="diff-block">
+      <div class="filename">AuthController.cs &mdash; Login endpoint</div>
+      <pre><span class="line context">[HttpPost("login")]</span>
+<span class="line context">public IActionResult Login(LoginDto dto)</span>
+<span class="line context">{</span>
+<span class="line context">    var user = authService.Authenticate(dto.Username, dto.Password);</span>
+<span class="line removed">-   if (user == null) return Unauthorized();</span>
+<span class="line added">+   if (user == null)</span>
+<span class="line added">+   {</span>
+<span class="line added">+       _logger.LogWarning(</span>
+<span class="line added">+           "Failed login. User: {Username}, IP: {IP}, UA: {UserAgent}",</span>
+<span class="line added">+           dto.Username,</span>
+<span class="line added">+           HttpContext.Connection.RemoteIpAddress,</span>
+<span class="line added">+           Request.Headers.UserAgent.ToString());</span>
+<span class="line added">+       return Unauthorized("Invalid username or password");</span>
+<span class="line added">+   }</span>
+<span class="line added">+</span>
+<span class="line added">+   _logger.LogInformation(</span>
+<span class="line added">+       "Successful login. User: {UserId}, IP: {IP}",</span>
+<span class="line added">+       user.Id,</span>
+<span class="line added">+       HttpContext.Connection.RemoteIpAddress);</span>
+<span class="line context">    return Ok(GenerateToken(user));</span>
+<span class="line context">}</span></pre>
+    </div>
+
+    <div class="diff-block">
+      <div class="filename">Program.cs &mdash; Structured logging + metrics</div>
+      <pre><span class="line removed">-builder.Host.UseSerilog();</span>
+<span class="line added">+builder.Host.UseSerilog((ctx, config) =&gt; config</span>
+<span class="line added">+    .MinimumLevel.Information()</span>
+<span class="line added">+    .WriteTo.Console()</span>
+<span class="line added">+    .WriteTo.Seq("http://seq:5341")</span>
+<span class="line added">+    .Enrich.WithProperty("App", "MyApp"));</span>
+<span class="line added">+</span>
+<span class="line added">+// Metrics for Prometheus &mdash; enables alerting</span>
+<span class="line added">+builder.Services.AddOpenTelemetry()</span>
+<span class="line added">+    .WithMetrics(m =&gt; m</span>
+<span class="line added">+        .AddAspNetCoreInstrumentation()</span>
+<span class="line added">+        .AddPrometheusExporter());</span>
+<span class="line context"></span>
+<span class="line context">var app = builder.Build();</span>
+<span class="line added">+app.MapPrometheusScrapingEndpoint();</span></pre>
+    </div>
+
+    <div class="risk-fix">
+      <div class="risk-box">
+        <div class="label">Risk</div>
+        <p><code>return Unauthorized()</code> without logging means we're blind. When brute-force hits, we have no data. NIS2 requires a 24-hour early warning &mdash; without structured logging and alerting we can't comply with that.</p>
+      </div>
+      <div class="fix-box">
+        <div class="label">Fix</div>
+        <p>Structured logging with context (who, from where, when) + metrics exposed to monitoring. When an incident happens, we have the data to react within 24 hours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OVERVIEW TABLE -->
+<section class="overview-section">
+  <div class="container">
+    <table class="overview-table">
+      <thead>
+        <tr><th>Diff</th><th>Topic</th><th>CRA Article</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Access Control</td><td><span class="tag">&sect;2d</span></td></tr>
+        <tr><td>2</td><td>Secure Defaults</td><td><span class="tag">&sect;2b</span> <span class="tag">&sect;2k</span></td></tr>
+        <tr><td>3</td><td>Supply Chain / SBOM</td><td><span class="tag">&sect;2a</span> <span class="tag">&sect;2c</span></td></tr>
+        <tr><td>4</td><td>Confidentiality &amp; Integrity</td><td><span class="tag">&sect;2e</span> <span class="tag">&sect;2f</span></td></tr>
+        <tr><td>5</td><td>Attack Surface</td><td><span class="tag">&sect;2h</span> <span class="tag">&sect;2j</span></td></tr>
+        <tr><td>6</td><td>Logging &amp; Incidents</td><td><span class="tag">&sect;2l</span> <span class="tag">NIS2</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<section class="footer">
+  <div class="message">Security is not extra work but a matter of habit.</div>
+  <p>CRA Awareness Campaign &mdash; Security Champions Network</p>
+</section>
+
+</body>
+</html>
