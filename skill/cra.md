@@ -120,7 +120,7 @@ builder.Configuration.GetConnectionString("Default");
 
 ## §2f — Protect Data Integrity
 
-No string concatenation in SQL. Use EF Core LINQ or parameterized queries.
+No string concatenation in SQL. Use EF Core LINQ or parameterized queries, depending on the existing pattern.
 
 ```csharp
 // BAD: SQL injection via string concatenation
@@ -216,5 +216,3 @@ When reviewing code, for each file:
 
 1. List which §2 requirements are relevant
 2. Flag violations with the specific requirement and a diff showing the fix
-3. Note what's already compliant
-4. Keep it short — developers stop reading after the first wall of text
