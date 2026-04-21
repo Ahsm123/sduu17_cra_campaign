@@ -210,9 +210,12 @@ builder.Services.AddOpenTelemetry()
     });
 ```
 
-## How to Review
+How to Review
 
-When reviewing code, for each file:
+    Use the search tool (mgrep/Semgrep) to scan the repository for hardcoded secrets, FromSqlRaw, and missing authorization attributes.
 
-1. List which §2 requirements are relevant
-2. Flag violations with the specific requirement and a diff showing the fix
+    Read Program.cs to verify secure middleware configurations (Rate Limiting, Fallback Policies, HTTPS).
+
+    Execute the dotnet CLI tool to generate the SBOM and check for vulnerable dependencies.
+
+    List the relevant §2 requirements and flag violations with a diff showing the fix.
