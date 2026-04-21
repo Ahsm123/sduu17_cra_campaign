@@ -210,12 +210,11 @@ builder.Services.AddOpenTelemetry()
     });
 ```
 
-How to Review
+## How to Review
+When reviewing code, follow this sequence:
+1. **Gather Global Context:** Use the File System tool to read `Program.cs` and `appsettings.json` to verify global defaults (HTTPS, Rate Limiting, FallbackPolicies).
+2. **Scan for Anti-Patterns:** Use the Code Search tool to hunt for hardcoded secrets, SQL injection vectors, and missing `[Authorize]` tags across the repository.
+3. **Verify Dependencies:** Use the Shell tool to generate an SBOM and check for known vulnerabilities. 
+4. **Report:** List which §2 requirements are relevant to the findings. Flag violations with the specific requirement and a diff showing the fix.
 
-    Use the search tool (mgrep/Semgrep) to scan the repository for hardcoded secrets, FromSqlRaw, and missing authorization attributes.
-
-    Read Program.cs to verify secure middleware configurations (Rate Limiting, Fallback Policies, HTTPS).
-
-    Execute the dotnet CLI tool to generate the SBOM and check for vulnerable dependencies.
-
-    List the relevant §2 requirements and flag violations with a diff showing the fix.
+//TODO: Make the tools available
