@@ -1,7 +1,6 @@
 ---
 name: cra-compliance
 description: CRA (Cyber Resilience Act) compliance review for .NET projects. Checks code against EU Annex I, Part I, Section 2 requirements including secure defaults, encryption, access control, logging, and attack surface reduction.
-origin: ECC
 ---
 
 # CRA Compliance Review for .NET
